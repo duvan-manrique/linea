@@ -32,6 +32,7 @@ public class PersonaEditorialServiceImp implements IPersonaEditorialService {
 	@Override
 	public PersonaEditorial guardarNuevos(PersonaEditorial pe) throws ConflictException, Exception {
 		try {
+			
 			Persona p = this.personaService.guardar(pe.getAutor());
 			Editorial e = this.editorialService.guardar(pe.getEditorial());
 			

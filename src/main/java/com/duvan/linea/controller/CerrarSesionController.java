@@ -16,8 +16,7 @@ public class CerrarSesionController {
 	
 	@GetMapping("/anular/{tokenId:.*}")
 	public void revocarToken(@PathVariable("tokenId") String token) {
-		tokenServices.revokeToken(token);
-		
+		tokenServices.revokeToken(token);	
 	}	
 
 }

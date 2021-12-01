@@ -1,4 +1,5 @@
 package com.duvan.linea.service.imp;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,28 +23,28 @@ import com.duvan.linea.repository.IRolRepo;
 import com.duvan.linea.serv.IPersonaService;
 
 @Service
-public class PersonaServiceImp implements IPersonaService, UserDetailsService{
+public class PersonaServiceImp implements IPersonaService, UserDetailsService {
 
 	@Autowired
 	private IPersonaRepo personaRepo;
-	
+
 	@Autowired
 	private IRolRepo rolRepo;
-	
+
 	@Autowired
 	private BCryptPasswordEncoder bcrypt;
-	
+
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		Persona p = this.personaRepo.findOneByCorreo(username);
-		if(p == null)
+		if (p == null)
 			throw new UsernameNotFoundException("Usuario no encontrado");
-		
+
 		List<GrantedAuthority> roles = new ArrayList<>();
 		roles.add(new SimpleGrantedAuthority(p.getRol().getRol()));
-		
+
 		UserDetails ud = new User(p.getCorreo(), p.getClave(), roles);
-		
+
 		return ud;
 	}
 
@@ -55,7 +56,13 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 			if (this.personaRepo.findAll(PageRequest.of(page, size)).isEmpty()) {
 				throw new ModelNotFoundException("lista vacia");
 			} else {
-				Page<Persona> autors = this.personaRepo.findAll(PageRequest.of(page, size, Sort.by("nombre").ascending())).map(p -> {p.setLibro(null); p.setAutor_editorial(null); p.setRol(null); return p;});
+				Page<Persona> autors = this.personaRepo
+						.findAll(PageRequest.of(page, size, Sort.by("nombre").ascending())).map(p -> {
+							p.setLibro(null);
+							p.setAutor_editorial(null);
+							p.setRol(null);
+							return p;
+						});
 				return autors;
 			}
 
@@ -69,21 +76,32 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 	}
 
 	@Override
-	public Page<Persona> retornarOrdenados(String orden, String tipo, int param) throws ModelNotFoundException, Exception {
+	public Page<Persona> retornarOrdenados(String orden, String tipo, int param)
+			throws ModelNotFoundException, Exception {
 		try {
 
 			if (this.personaRepo.findAll(PageRequest.of(param, 5)).isEmpty()) {
 				throw new ModelNotFoundException("lista vacia");
 			} else {
 
-				if(tipo.equals("asc")) {
-					return this.personaRepo.findAll(PageRequest.of(param, 5, Sort.by(orden).ascending())).map(p -> {p.setLibro(null); p.setAutor_editorial(null); p.setRol(null); return p;});
+				if (tipo.equals("asc")) {
+					return this.personaRepo.findAll(PageRequest.of(param, 5, Sort.by(orden).ascending())).map(p -> {
+						p.setLibro(null);
+						p.setAutor_editorial(null);
+						p.setRol(null);
+						return p;
+					});
 				}
-				
-				if(tipo.equals("des")) {
-					return this.personaRepo.findAll(PageRequest.of(param, 5, Sort.by(orden).descending())).map(p -> {p.setLibro(null); p.setAutor_editorial(null); p.setRol(null); return p;});
+
+				if (tipo.equals("des")) {
+					return this.personaRepo.findAll(PageRequest.of(param, 5, Sort.by(orden).descending())).map(p -> {
+						p.setLibro(null);
+						p.setAutor_editorial(null);
+						p.setRol(null);
+						return p;
+					});
 				}
-				
+
 				return null;
 			}
 
@@ -103,7 +121,12 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 			if (this.personaRepo.findAll(PageRequest.of(page, size)).isEmpty()) {
 				throw new ModelNotFoundException("lista vacia");
 			} else {
-				Page<Persona> autors = this.personaRepo.findAll(PageRequest.of(page, size)).map(p -> {p.setAutor_editorial(null); p.setLibro(null); p.setRol(null); return p;});
+				Page<Persona> autors = this.personaRepo.findAll(PageRequest.of(page, size)).map(p -> {
+					p.setAutor_editorial(null);
+					p.setLibro(null);
+					p.setRol(null);
+					return p;
+				});
 				return autors;
 			}
 
@@ -131,15 +154,21 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 
 	@Override
 	public Persona guardar(Persona object) throws ConflictException, Exception {
-		
+
 		try {
+			if (this.personaRepo.existsByCedula(object.getCedula())) {
+				throw new ConflictException("Cedula ya existente");
+			}
+			if (this.personaRepo.existsByCorreo(object.getCorreo())) {
+				throw new ConflictException("Correo ya existente");
+			}
 
 			if (!this.rolRepo.existsById(object.getRol().getId())) {
 				throw new ModelNotFoundException("lista vacia");
 			} else {
 				String clave = this.bcrypt.encode(object.getClave());
 				object.setClave(clave);
-				
+
 				return this.personaRepo.save(object);
 			}
 
@@ -147,6 +176,8 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 			throw new NullPointerException("Objeo nulo no asignado");
 		} catch (ModelNotFoundException e) {
 			throw new ModelNotFoundException(e.getMessage());
+		} catch (ConflictException e) {
+			throw new ConflictException(e.getMessage());
 		} catch (Exception e) {
 			throw new Exception("Error general");
 		}
@@ -156,48 +187,55 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 	public Persona editar(Persona object)
 			throws ArgumentRequiredException, ModelNotFoundException, ConflictException, Exception {
 		try {
-			Persona l = this.personaRepo.findById(object.getId()).orElseThrow(() -> new ModelNotFoundException("autor no encontrado"));
-			if(l.getCorreo() != object.getCorreo()) {
-				if (this.personaRepo.existsByCorreo(object.getCorreo())) {
+			
+			Persona l = this.personaRepo.findById(object.getId())
+					.orElseThrow(() -> new ModelNotFoundException("autor no encontrado"));
+
+			if (!l.getCorreo().equals(object.getCorreo())) {
+				if (this.personaRepo.cantidadCorreo(object.getCorreo()) == 1) {
 					throw new ConflictException("correo ya existente");
 				} else {
-					if(object.getNombre() != l.getNombre()) {
-						l.setNombre(object.getNombre());
-					}
-					
-					if(object.getCedula() != l.getCedula()) {
-						l.setCedula(object.getCedula());
-					}
-					
-					if(object.getApellido() != l.getApellido()) {
-						l.setApellido(object.getApellido());
-					}
-					
-					if(object.getCorreo() != l.getCorreo()) {
-						l.setCorreo(object.getCorreo());
-					}
-					
-					if(object.getClave() != l.getClave()) {
-						String clave = this.bcrypt.encode(object.getClave());
-						l.setClave(clave);
-					}
-					
-					Persona l2 = this.personaRepo.save(l);
-					l2.setLibro(null);
-					l2.setAutor_editorial(null);
-					return l2;
-					
+					l.setCorreo(object.getCorreo());
 				}
-			}else {
-				return l;
 			}
-	} catch (ConflictException e) {
-		throw new ConflictException(e.getMessage());
-	} catch (NullPointerException e) {
-		throw new NullPointerException("Objeo libro nulo no asignado");
-	} catch (Exception e) {
-		throw new Exception("Error general: " + e.getMessage());
-	}
+
+			if (!object.getCedula().equals(l.getCedula())) {
+				if (this.personaRepo.cantidadCedula(object.getCedula()) == 1) {
+					throw new ConflictException("Cedula ya existente");
+				} else {
+					l.setCedula(object.getCedula());
+				}
+			}
+
+			if (!object.getNombre().equals(l.getNombre())) {
+				l.setNombre(object.getNombre());
+			}
+
+			if (!object.getApellido().equals(l.getApellido())) {
+				l.setApellido(object.getApellido());
+			}
+
+			if (!object.getClave().equals(object.getClave())) {
+				String clave = this.bcrypt.encode(object.getClave());
+				l.setClave(clave);
+			}
+
+			Persona l2 = this.personaRepo.save(l);
+			l2.setLibro(null);
+			l2.setAutor_editorial(null);
+			return l2;
+
+		} catch (
+
+		ConflictException e) {
+			throw new ConflictException(e.getMessage());
+		} catch (NullPointerException e) {
+			throw new NullPointerException("Objeo libro nulo no asignado");
+		} catch (ModelNotFoundException e) {
+			throw new ModelNotFoundException(e.getMessage());
+		} catch (Exception e) {
+			throw new Exception("Error general: " + e.getMessage());
+		}
 	}
 
 	@Override
@@ -217,7 +255,5 @@ public class PersonaServiceImp implements IPersonaService, UserDetailsService{
 			throw new Exception("Error general");
 		}
 	}
-	
-	
 
 }

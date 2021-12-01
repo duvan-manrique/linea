@@ -16,6 +16,9 @@ public interface IPersonaRepo extends JpaRepository<Persona, Integer>{
 	
 	//SQL Nativa	
 		
-	@Query(value = "SELECT  count(correo) from autor where correo = ?1 and id !=  ?2 ", nativeQuery  = true)
-	Integer cantidadCorreo(String correo,int id);
+	@Query(value = "SELECT  count(correo) from persona where correo = ?1", nativeQuery  = true)
+	Integer cantidadCorreo(String correo);
+	
+	@Query(value = "SELECT  count(cedula) from persona where cedula = ?1", nativeQuery  = true)
+	Integer cantidadCedula(String cedula);
 }
