@@ -61,6 +61,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter{
     @Bean
     public CorsConfigurationSource configurationSource() {
     	CorsConfiguration config = new CorsConfiguration();
+    	
     	System.out.println(config.getAllowedHeaders() + " estos son los autorizados");
     	
     	config.setAllowedOrigins(Arrays.asList("*"));
@@ -71,6 +72,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter{
     
     	UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     	source.registerCorsConfiguration("/**", config);
+    	System.out.println(config.getAllowedHeaders() + " estos son los autorizados");
     	
     	return source;
     }
